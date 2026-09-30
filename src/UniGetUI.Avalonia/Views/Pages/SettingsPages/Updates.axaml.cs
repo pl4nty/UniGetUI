@@ -33,6 +33,20 @@ public sealed partial class Updates : UserControl, ISettingsPage
         RefreshMinimumAgeLayout();
 
         ReleaseDateCompatTableHolder.Content = VM.BuildReleaseDateCompatTable();
+
+        VM.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(UpdatesViewModel.IsWindowsUpdateProviderRegistered))
+                RefreshWindowsUpdateProviderButton();
+        };
+        RefreshWindowsUpdateProviderButton();
+    }
+
+    private void RefreshWindowsUpdateProviderButton()
+    {
+        WindowsUpdateProviderCard.ButtonText = VM.IsWindowsUpdateProviderRegistered
+            ? CoreTools.Translate("Disable")
+            : CoreTools.Translate("Enable");
     }
 
     private void RefreshMinimumAgeLayout()

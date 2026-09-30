@@ -103,6 +103,14 @@ if (-not (Test-Path $PolicyElevatorPath)) {
     throw "Elevated policy helper was not staged at $PolicyElevatorPath"
 }
 
+# The Windows Update provider catalog stays unsigned in local builds; sign it to test registration.
+try {
+    & (Join-Path $PSScriptRoot "prepare-windows-update-provider.ps1") -Path (Join-Path $BinDir "Assets\WindowsUpdateProvider")
+}
+catch {
+    Write-Warning "Could not prepare the Windows Update provider: $_"
+}
+
 # Keep smaller symbols for useful local crash source information, and prune oversized ones.
 $MaxShippedPdbSizeBytes = 1MB
 

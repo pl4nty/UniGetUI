@@ -50,6 +50,21 @@
                                    CornerRadius="0,0,8,8"
                                    IsEnabled="{Binding IsAutomaticUpdatesEnabled}"/>
 
+            <settings:TranslatedTextBlock Text="Windows Update integration"
+                                          FontSize="14"
+                                          FontWeight="SemiBold"
+                                          Margin="44,32,4,8"
+                                          IsVisible="{Binding IsWindowsUpdateProviderSupported}"
+                                          automation:AutomationProperties.HeadingLevel="2"/>
+
+            <settings:ButtonCard x:Name="WindowsUpdateProviderCard"
+                                 CornerRadius="8"
+                                 Text="{t:Translate Let Windows Update schedule package updates}"
+                                 Description="{Binding WindowsUpdateProviderStatus}"
+                                 IsVisible="{Binding IsWindowsUpdateProviderSupported}"
+                                 IsEnabled="{Binding !IsWindowsUpdateProviderBusy}"
+                                 Command="{Binding ToggleWindowsUpdateProviderCommand}"/>
+
             <settings:TranslatedTextBlock Text="Update security"
                                           FontSize="14"
                                           FontWeight="SemiBold"

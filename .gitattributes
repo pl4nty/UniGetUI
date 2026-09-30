@@ -1,2 +1,4 @@
 src/UniGetUI.PackageEngine.Managers.Chocolatey/choco-cli/** linguist-vendored
 .githooks/* text eol=lf
+# The Windows Update provider files are hashed into provider.json; keep their bytes stable
+src/SharedAssets/Assets/WindowsUpdateProvider/* text eol=crlf

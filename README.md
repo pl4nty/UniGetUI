@@ -52,6 +52,7 @@ Read more in the [Devolutions announcement](https://devolutions.net/blog/2026/03
  - [CLI reference](docs/CLI.md)
  - [IPC reference](docs/IPC.md)
  - [Portable mode](docs/PORTABLE.md)
+ - [Windows Update integration](docs/WINDOWS_UPDATE.md)
 
 ## Installation
 <p>There are multiple ways to install UniGetUI — choose whichever one you prefer!</p>

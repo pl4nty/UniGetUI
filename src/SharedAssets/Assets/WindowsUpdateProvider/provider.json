@@ -1,0 +1,23 @@
+{
+  "Id": "UniGetUI",
+  "Version": "1.0.0.0",
+  "Type": "Powershell",
+  "CatalogFile": "UniGetUI.cat",
+  "ScanFileName": "UniGetUI-scan.ps1",
+  "ScanFileArguments": "-LogFile UniGetUI-scan.log",
+  "ProductCode": "{889610CC-4337-4BDB-AC3B-4F21806C0BDE}_is1",
+  "PayloadFiles": [
+    {
+      "FileName": "UniGetUI-action.ps1",
+      "FileHash": "bH9r4uAhUv8mbN+JkKcpevxO2umMv6z+AoEaBTV5wTk="
+    },
+    {
+      "FileName": "UniGetUI-provider.psm1",
+      "FileHash": "HX5wuAAnnM7SMq9Iyy+RhmJjSRzZm2zbuecNaTgEtvo="
+    },
+    {
+      "FileName": "UniGetUI-scan.ps1",
+      "FileHash": "oObXADrFw33wq4vRvpq0MIYneblwJMMT9TM8RzeVGv4="
+    }
+  ]
+}
