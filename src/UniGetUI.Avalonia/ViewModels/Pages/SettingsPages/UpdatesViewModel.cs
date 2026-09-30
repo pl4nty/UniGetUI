@@ -23,7 +23,6 @@ public partial class UpdatesViewModel : ViewModelBase
     [ObservableProperty] private bool _isCustomAgeSelected;
     [ObservableProperty] private bool _isWindowsUpdateProviderSupported;
     [ObservableProperty] private bool _isWindowsUpdateProviderRegistered;
-    [ObservableProperty] private bool _isWindowsUpdateProviderBusy;
     [ObservableProperty] private string _windowsUpdateProviderStatus = "";
 
     /// <summary>Items for the minimum update age ComboboxCard, in display/value pairs.</summary>
@@ -47,15 +46,15 @@ public partial class UpdatesViewModel : ViewModelBase
     {
         IsAutomaticUpdatesEnabled = MaintenanceScheduleStore.IsEnabled(MaintenanceTaskKind.InstallUpdates);
         IsCustomAgeSelected = CoreSettings.GetValue(CoreSettings.K.MinimumUpdateAge) == "custom";
-        IsWindowsUpdateProviderSupported = WindowsUpdateProviderRegistration.IsSupported;
-        IsWindowsUpdateProviderRegistered = IsWindowsUpdateProviderSupported && WindowsUpdateProviderRegistration.IsRegistered;
+        IsWindowsUpdateProviderSupported = OperatingSystem.IsWindows() && WindowsUpdateProviderRegistration.IsSupported;
+        IsWindowsUpdateProviderRegistered = OperatingSystem.IsWindows() && WindowsUpdateProviderRegistration.IsRegistered;
         WindowsUpdateProviderStatus = DescribeWindowsUpdateProvider(null);
     }
 
     private string DescribeWindowsUpdateProvider(string? error)
     {
         string state = IsWindowsUpdateProviderRegistered
-            ? CoreTools.Translate("Windows Update is scheduling package updates found by UniGetUI. You can follow their progress in Settings > Apps > Installed apps.")
+            ? CoreTools.Translate("Windows Update is scheduling the package updates found by UniGetUI.")
             : CoreTools.Translate("Let Windows Update install the updates found by UniGetUI when the device is idle, plugged in and on a suitable network. Requires administrator rights.");
         return error is null ? state : $"{state}\n{CoreTools.Translate("The last change failed: {0}", error)}";
     }
@@ -63,20 +62,12 @@ public partial class UpdatesViewModel : ViewModelBase
     [RelayCommand]
     private async Task ToggleWindowsUpdateProvider()
     {
-        if (IsWindowsUpdateProviderBusy)
+        if (!OperatingSystem.IsWindows())
             return;
 
-        IsWindowsUpdateProviderBusy = true;
-        try
-        {
-            string? error = await WindowsUpdateProviderRegistration.SetRegisteredAsync(!IsWindowsUpdateProviderRegistered);
-            IsWindowsUpdateProviderRegistered = WindowsUpdateProviderRegistration.IsRegistered;
-            WindowsUpdateProviderStatus = DescribeWindowsUpdateProvider(error);
-        }
-        finally
-        {
-            IsWindowsUpdateProviderBusy = false;
-        }
+        string? error = await WindowsUpdateProviderRegistration.SetRegisteredAsync(!IsWindowsUpdateProviderRegistered);
+        IsWindowsUpdateProviderRegistered = WindowsUpdateProviderRegistration.IsRegistered;
+        WindowsUpdateProviderStatus = DescribeWindowsUpdateProvider(error);
     }
 
     public Control BuildReleaseDateCompatTable()

@@ -62,7 +62,6 @@
                                  Text="{t:Translate Let Windows Update schedule package updates}"
                                  Description="{Binding WindowsUpdateProviderStatus}"
                                  IsVisible="{Binding IsWindowsUpdateProviderSupported}"
-                                 IsEnabled="{Binding !IsWindowsUpdateProviderBusy}"
                                  Command="{Binding ToggleWindowsUpdateProviderCommand}"/>
 
             <settings:TranslatedTextBlock Text="Update security"
