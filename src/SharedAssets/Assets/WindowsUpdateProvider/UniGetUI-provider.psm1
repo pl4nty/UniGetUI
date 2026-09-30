@@ -2,7 +2,7 @@
 # Shared helpers for the UniGetUI Windows Update Orchestration Platform (UOP) provider.
 #
 # The orchestrator runs UniGetUI-scan.ps1 and UniGetUI-action.ps1 from this folder. Both scripts
-# delegate the package work to UniGetUI.exe (two folders up) and only translate its results into
+# delegate the package work to UniGetUI.exe and only translate its results into
 # the Windows.Management.Update WinRT API. See docs/WINDOWS_UPDATE.md.
 #
 # Every file in this folder is listed in provider.json with its SHA-256 hash, and the orchestrator
@@ -35,10 +35,9 @@ function Get-ProviderId {
 # The orchestrator requires every update to name an installed product. Packages from arbitrary
 # managers have no identity it can check, so updates are attributed to UniGetUI itself.
 function Get-ProviderIdentity {
-    $provider = Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSCommandPath) 'provider.json') -Raw | ConvertFrom-Json
     return [Windows.Management.Update.WindowsSoftwareUpdateIdentity]::new(
         [Windows.Management.Update.WindowsSoftwareUpdateIdentityType]::ProductCode,
-        [string]$provider.ProductCode)
+        [string](Get-ProviderJson).ProductCode)
 }
 
 function Get-StateDirectory {
@@ -76,14 +75,40 @@ function Write-ProviderLog {
     }
 }
 
+function Get-ProviderJson {
+    return (Get-Content -LiteralPath (Join-Path (Split-Path -Parent $PSCommandPath) 'provider.json') -Raw | ConvertFrom-Json)
+}
+
 function Get-UniGetUIExecutable {
-    # The provider ships in <install dir>\Assets\WindowsUpdateProvider
-    $installDir = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSCommandPath))
-    $exe = Join-Path $installDir 'UniGetUI.exe'
-    if (-not (Test-Path -LiteralPath $exe)) {
-        throw "UniGetUI.exe was not found at $exe"
+    # The orchestrator runs a copy of this folder (under ProgramData\USOPrivate), so find the
+    # installation through the uninstall key the provider identity already has to point to
+    $productCode = [string](Get-ProviderJson).ProductCode
+    $candidates = @()
+    foreach ($view in @([Microsoft.Win32.RegistryView]::Registry64, [Microsoft.Win32.RegistryView]::Registry32)) {
+        $hklm = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, $view)
+        try {
+            $key = $hklm.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$productCode")
+            if ($null -ne $key) {
+                $location = [string]$key.GetValue('InstallLocation')
+                $key.Dispose()
+                if ($location) { $candidates += $location }
+            }
+        }
+        finally {
+            $hklm.Dispose()
+        }
     }
-    return $exe
+
+    # Running from the installation folder itself (<install dir>\Assets\WindowsUpdateProvider)
+    $candidates += Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSCommandPath))
+
+    foreach ($dir in $candidates) {
+        $exe = Join-Path $dir 'UniGetUI.exe'
+        if (Test-Path -LiteralPath $exe) {
+            return $exe
+        }
+    }
+    throw "UniGetUI.exe was not found in $($candidates -join ', ')"
 }
 
 # Runs UniGetUI.exe with the given arguments and returns the parsed JSON it wrote to OutputPath.

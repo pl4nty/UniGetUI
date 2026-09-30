@@ -1,6 +1,6 @@
 # Windows Update integration
 
-On Windows 11 with the August 2026 cumulative update or later (build 26100.9168 / 26200.9168+), UniGetUI can register itself as a provider for the [Windows Update Orchestration Platform (UOP)](https://github.com/microsoft/windows-uop). Windows Update then decides when package updates are installed, using the same logic it uses for its own updates: device idle, plugged in, on a suitable network, outside active hours, and within any Windows Update policies. Progress shows up in **Settings > Apps > Installed apps**.
+On Windows 11 with the August 2026 cumulative update or later (build 26100.9168 / 26200.9168+), UniGetUI can register itself as a provider for the [Windows Update Orchestration Platform (UOP)](https://github.com/microsoft/windows-uop). Windows Update then decides when package updates are installed, using the same logic it uses for its own updates: device idle, plugged in, on a suitable network, outside active hours, and within any Windows Update policies. Microsoft documents that pending updates and their progress show up in **Settings > Apps > Installed apps**.
 
 This is an alternative to UniGetUI's own scheduled maintenance, not a replacement: both can be enabled, in which case whichever runs first installs the update.
 
@@ -31,14 +31,17 @@ State\scan-result.json  ──► SetScanResult()        State\action-*.json ─
 - `provider.json` declares the provider (`Id` `UniGetUI`, type `Powershell`) and the SHA-256 hash of every script in the folder. `UniGetUI.cat`, generated and code-signed by the release pipeline, vouches for `provider.json`.
 - The scan script runs `UniGetUI.exe --uop-scan`, which loads the package managers headlessly and lists the available updates exactly as the **Software Updates** page would (ignored updates and the minimum update age apply). Each one is reported as a `Deploy` action.
 - For each update it chose to install, the orchestrator runs the action script, which runs `UniGetUI.exe --uop-update` for that package and reports the outcome. Updates always run non-interactively.
-- Logs and intermediate results are written to the `State` subfolder, the only place the orchestrator lets a provider write to.
+- On registration the orchestrator copies the provider folder to `%ProgramData%\USOPrivate\Providers\Registered\UniGetUI_<version>` and runs the scripts from there, so they find `UniGetUI.exe` through the `InstallLocation` of the uninstall key named by `ProductCode`.
+- Logs and intermediate results are written to the `State` subfolder of that copy, the only place the orchestrator lets a provider write to.
+- The orchestrator runs one deploy at a time; the other updates wait with the `Exclusivity` attention reason.
 
 The `--uop-scan` and `--uop-update` arguments are internal to this integration and not part of the public CLI.
 
 ## Known limitations
 
+- **Windows Settings.** As of Windows 11 25H2 build 26200.9445 (UUS 1509.2608.11022.0), the orchestrator schedules and runs UniGetUI updates and records them (`WindowsUpdateManager.GetMostRecentCompletedUpdates`), but none of the Settings pages show them yet: no Settings handler consumes the UOP API on that build. The app-update toasts that ship in the update stack are restart reminders, so they only appear for updates that ask for a restart, which UniGetUI never does (see below).
 - **Update identity.** The orchestrator requires every update to name an installed product (MSI/ARP `ProductCode` or MSIX `PackageFamilyName`). Packages from most managers have no such identity, so all updates are attributed to UniGetUI's own `ProductCode`.
-- **Account.** The orchestrator runs providers from a system service, so UniGetUI is expected to run under that account: it uses that account's UniGetUI settings (enabled managers, ignored updates) and only sees packages installed machine-wide. Per-user installs from the signed-in user's WinGet, Scoop, npm, etc. are not covered.
+- **Account.** The orchestrator runs providers from a system service, so UniGetUI runs as `SYSTEM`: it uses that account's UniGetUI settings (enabled managers, ignored updates) and only sees packages installed machine-wide. Per-user installs from the signed-in user's WinGet, Scoop, npm, etc. are not covered.
 - **Reboots and running apps.** Installers that need a reboot or need the app closed are reported as plain successes or failures; UniGetUI does not yet report `RestartReason`s or provide close-and-install actions.
 - **Progress.** Only the start and the end of each update are reported.
 - **Sizes.** Download and install sizes are reported as 0 because most managers do not expose them.
