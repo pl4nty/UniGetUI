@@ -3,6 +3,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using UniGetUI.Avalonia.Infrastructure;
 using UniGetUI.Avalonia.Views.Pages.SettingsPages;
 using UniGetUI.Core.Tools;
 using UniGetUI.Core.Tools.Scheduling;
@@ -20,6 +21,9 @@ public partial class UpdatesViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isAutomaticUpdatesEnabled;
     [ObservableProperty] private bool _isCustomAgeSelected;
+    [ObservableProperty] private bool _isWindowsUpdateProviderSupported;
+    [ObservableProperty] private bool _isWindowsUpdateProviderRegistered;
+    [ObservableProperty] private string _windowsUpdateProviderStatus = "";
 
     /// <summary>Items for the minimum update age ComboboxCard, in display/value pairs.</summary>
     public IReadOnlyList<(string Name, string Value)> MinimumAgeItems { get; } =
@@ -42,6 +46,28 @@ public partial class UpdatesViewModel : ViewModelBase
     {
         IsAutomaticUpdatesEnabled = MaintenanceScheduleStore.IsEnabled(MaintenanceTaskKind.InstallUpdates);
         IsCustomAgeSelected = CoreSettings.GetValue(CoreSettings.K.MinimumUpdateAge) == "custom";
+        IsWindowsUpdateProviderSupported = OperatingSystem.IsWindows() && WindowsUpdateProviderRegistration.IsSupported;
+        IsWindowsUpdateProviderRegistered = OperatingSystem.IsWindows() && WindowsUpdateProviderRegistration.IsRegistered;
+        WindowsUpdateProviderStatus = DescribeWindowsUpdateProvider(null);
+    }
+
+    private string DescribeWindowsUpdateProvider(string? error)
+    {
+        string state = IsWindowsUpdateProviderRegistered
+            ? CoreTools.Translate("Windows Update is scheduling the package updates found by UniGetUI.")
+            : CoreTools.Translate("Let Windows Update install the updates found by UniGetUI when the device is idle, plugged in and on a suitable network. Requires administrator rights.");
+        return error is null ? state : $"{state}\n{CoreTools.Translate("The last change failed: {0}", error)}";
+    }
+
+    [RelayCommand]
+    private async Task ToggleWindowsUpdateProvider()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        string? error = await WindowsUpdateProviderRegistration.SetRegisteredAsync(!IsWindowsUpdateProviderRegistered);
+        IsWindowsUpdateProviderRegistered = WindowsUpdateProviderRegistration.IsRegistered;
+        WindowsUpdateProviderStatus = DescribeWindowsUpdateProvider(error);
     }
 
     public Control BuildReleaseDateCompatTable()

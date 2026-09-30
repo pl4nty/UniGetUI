@@ -226,6 +226,10 @@ jobs:
             throw "Elevated policy helper was not staged at unigetui_bin/Assets/Utilities/UniGetUI.PolicyElevator.exe"
           }
 
+          # Refresh the Windows Update provider hashes and generate its catalog, which the signing
+          # step below signs; the orchestrator refuses a provider with an unsigned catalog.
+          .\scripts\prepare-windows-update-provider.ps1 -Path "unigetui_bin/Assets/WindowsUpdateProvider"
+
           $MaxShippedPdbSizeBytes = 1MB
           $PdbsToRemove = Get-ChildItem "unigetui_bin" -Filter "*.pdb" -File -Recurse | Where-Object {
             $_.Length -gt $MaxShippedPdbSizeBytes
@@ -242,7 +246,7 @@ jobs:
         shell: pwsh
         run: |
           $ListPath = Join-Path $PWD "signing-files.txt"
-          $files = Get-ChildItem "unigetui_bin" -Recurse -Include "*.exe", "*.dll" | Where-Object {
+          $files = Get-ChildItem "unigetui_bin" -Recurse -Include "*.exe", "*.dll", "*.cat" | Where-Object {
             (Get-AuthenticodeSignature $_.FullName).Status -eq "NotSigned"
           }
           $files.FullName | Set-Content $ListPath

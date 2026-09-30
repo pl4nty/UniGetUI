@@ -78,6 +78,17 @@ public static class AvaloniaAppHost
             return;
         }
 
+#if WINDOWS
+        // Scan and update requests from the Windows Update provider scripts (Assets\WindowsUpdateProvider)
+        if (WindowsUpdateProviderHost.IsProviderCommand(args))
+        {
+            Environment.ExitCode = HeadlessDaemonHost.RunWindowsUpdateProviderCommandAsync(args)
+                .GetAwaiter()
+                .GetResult();
+            return;
+        }
+#endif
+
         if (IpcCliSyntax.IsIpcCommand(args))
         {
             Environment.ExitCode = IpcCliCommandRunner.RunAsync(args, Console.Out, Console.Error)

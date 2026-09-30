@@ -1,0 +1,10 @@
+{
+  "Id": "UniGetUI",
+  "Version": "1.0.0.0",
+  "Type": "Powershell",
+  "CatalogFile": "UniGetUI.cat",
+  "ScanFileName": "UniGetUI-provider.ps1",
+  "ScanFileArguments": "-Scan",
+  "ProductCode": "{889610CC-4337-4BDB-AC3B-4F21806C0BDE}_is1",
+  "PayloadFiles": []
+}

@@ -340,6 +340,8 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: re
 ; Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -File -NonInteractive ""{tmp}\EnsureWinGet.ps1"""; StatusMsg: "Ensuring WinGet is properly installed... (this may take a while)"; WorkingDir: {app}; Check: not CmdLineParamExists('/NoWinGet'); Flags: runhidden
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: runasoriginaluser nowait postinstall; Check: ShouldLaunchAfterInstall;
 Filename: "{app}\{#MyAppExeName}"; Parameters: "--migrate-wingetui-to-unigetui"; StatusMsg: "{cm:RemovingOldIcons}";
+; Windows Update runs its own copy of the provider, so refresh it (only if the user enabled it)
+Filename: "{sysnative}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\Assets\WindowsUpdateProvider\UniGetUI-provider.ps1"" -Refresh"; Flags: runhidden skipifdoesntexist; Tasks: regularinstall; Check: IsAdminInstallMode;
 
 
 [UninstallRun]    
@@ -349,6 +351,7 @@ Filename: {sys}\taskkill.exe; Parameters: "/f /im WingetUI.exe"; Flags: skipifdo
 Filename: {sys}\taskkill.exe; Parameters: "/f /im UniGetUI.exe"; Flags: skipifdoesntexist runhidden; RunOnceId: "KillUniGetUI"
 Filename: {sys}\taskkill.exe; Parameters: "/f /im UniGetUI.Avalonia.exe"; Flags: skipifdoesntexist runhidden; RunOnceId: "KillUniGetUIAvalonia"
 Filename: {sys}\taskkill.exe; Parameters: "/f /im UniGetUI.PolicyElevator.exe"; Flags: skipifdoesntexist runhidden; RunOnceId: "KillUniGetUIPolicyElevator"
+Filename: "{sysnative}\WindowsPowerShell\v1.0\powershell.exe"; Parameters: "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File ""{app}\Assets\WindowsUpdateProvider\UniGetUI-provider.ps1"" -Unregister"; Flags: skipifdoesntexist runhidden; RunOnceId: "UnregisterWindowsUpdateProvider"; Check: IsAdminInstallMode;
 
 [UninstallDelete]
 ; The elevated policy helper is authenticated by exact path, so a leftover copy must never
