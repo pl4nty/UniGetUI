@@ -19,6 +19,7 @@ Registering copies the folder to `%ProgramData%\USOPrivate\Providers\Registered\
 - The orchestrator requires every update to name an installed product, and packages from most managers have none, so all updates are attributed to UniGetUI's `ProductCode`.
 - Windows refuses to unregister a provider while one of its updates is installing, so disabling waits (up to ten minutes) for that update to finish.
 - Windows only surfaces app updates in **Settings > Apps > Installed apps** when they need the user, to approve them or to restart the device. UniGetUI never reports a required restart yet, and only reports progress at the start and end of each update.
+- As of update stack 1509.2608.11022.0, third-party providers are hidden from the Windows UI unless feature 51445910 (`Containment_UUS_AppNotifications`) is enabled, which the orchestrator only reads at boot. They also never honor the `RequireUpdateApproval` policy: `UOProviderEx::HonorRequireUpdateApprovalPolicy` always returns false.
 
 ## Testing a development build
 
