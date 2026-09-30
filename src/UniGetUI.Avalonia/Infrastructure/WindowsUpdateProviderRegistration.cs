@@ -96,6 +96,8 @@ internal static class WindowsUpdateProviderRegistration
             {
                 0 => null,
                 2 => CoreTools.Translate("The Windows Update Orchestration Platform is not available on this device"),
+                // The script exits with the orchestrator's HRESULT when it rejected the provider
+                < 0 => CoreTools.Translate("Windows Update rejected the provider with error {0}", $"0x{process.ExitCode:X8}"),
                 _ => CoreTools.Translate("The registration script failed with exit code {0}", process.ExitCode),
             };
         }

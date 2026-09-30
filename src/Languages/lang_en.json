@@ -746,6 +746,7 @@
   "Administrator rights are required": "Administrator rights are required",
   "The registration script could not be started": "The registration script could not be started",
   "The registration script failed with exit code {0}": "The registration script failed with exit code {0}",
+  "Windows Update rejected the provider with error {0}": "Windows Update rejected the provider with error {0}",
   "The Windows Update Orchestration Platform is not available on this device": "The Windows Update Orchestration Platform is not available on this device",
   "Only show updates that are at least the specified number of days old": "Only show updates that are at least the specified number of days old",
   "Warn me when the installer URL host changes between the installed version and the new version (WinGet only)": "Warn me when the installer URL host changes between the installed version and the new version (WinGet only)",

@@ -3,7 +3,8 @@
 #
 # Must run elevated, in 64-bit Windows PowerShell. Called by UniGetUI's settings page (Register /
 # Unregister) and by the installer (Refresh after an upgrade, Unregister on uninstall).
-# Exit codes: 0 success, 1 failure, 2 not supported on this device or installation.
+# Exit codes: 0 success, 2 not supported on this device or installation, the orchestrator's
+# HRESULT (0x8024A3xx, so negative) when it rejected a call, 1 any other failure.
 #
 
 [CmdletBinding()]
@@ -26,6 +27,9 @@ $ClientId = 'UniGetUI'
 $MarkerKey = 'HKLM:\SOFTWARE\Devolutions\UniGetUI'
 $MarkerValue = 'WindowsUpdateProviderRegistered'
 
+# HRESULT of the last orchestrator call that failed, used as the exit code
+$script:FailureCode = 0
+
 function Test-IsRegisteredMarker {
     $value = Get-ItemProperty -Path $MarkerKey -Name $MarkerValue -ErrorAction SilentlyContinue
     return ($null -ne $value -and $value.$MarkerValue -eq 1)
@@ -43,6 +47,11 @@ function Set-RegisteredMarker {
     elseif (Test-Path $MarkerKey) {
         Remove-ItemProperty -Path $MarkerKey -Name $MarkerValue -ErrorAction SilentlyContinue
     }
+}
+
+function Set-FailureCode {
+    param($Result)
+    $script:FailureCode = [BitConverter]::ToInt32([BitConverter]::GetBytes([uint32]$Result.ResultCode), 0)
 }
 
 function Format-Result {
@@ -64,6 +73,7 @@ function Invoke-Unregister {
         $result = $provider.Unregister()
         Write-Host "Unregister() -> $(Format-Result $result)"
         if (-not $result.Succeeded) {
+            Set-FailureCode $result
             throw "Could not unregister the UniGetUI Windows Update provider"
         }
     }
@@ -87,12 +97,14 @@ function Invoke-Register {
     $validation = $provider.Validate()
     Write-Host "Validate() -> $(Format-Result $validation)"
     if (-not $validation.Succeeded) {
+        Set-FailureCode $validation
         throw "The UniGetUI Windows Update provider failed validation, see docs/WINDOWS_UPDATE.md for the result codes"
     }
 
     $result = $provider.Register()
     Write-Host "Register() -> $(Format-Result $result)"
     if (-not $result.Succeeded) {
+        Set-FailureCode $result
         throw "Could not register the UniGetUI Windows Update provider"
     }
 
@@ -127,5 +139,6 @@ try {
 }
 catch {
     Write-Host "ERROR: $($_.Exception.Message)"
+    if ($script:FailureCode -ne 0) { exit $script:FailureCode }
     exit 1
 }
