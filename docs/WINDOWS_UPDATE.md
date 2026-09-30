@@ -17,7 +17,7 @@ Registering copies the folder to `%ProgramData%\USOPrivate\Providers\Registered\
 
 - Updates run as `SYSTEM`: they use that account's UniGetUI settings and only cover machine-wide packages.
 - The orchestrator requires every update to name an installed product, and packages from most managers have none, so all updates are attributed to UniGetUI's `ProductCode`.
-- Windows refuses to unregister a provider while one of its updates is installing (`0x8024A304`), so disabling the integration can fail until that update finishes.
+- Windows refuses to unregister a provider while one of its updates is installing, so disabling waits (up to ten minutes) for that update to finish.
 - Windows only surfaces app updates in **Settings > Apps > Installed apps** when they need the user, to approve them or to restart the device. UniGetUI never reports a required restart yet, and only reports progress at the start and end of each update.
 
 ## Testing a development build

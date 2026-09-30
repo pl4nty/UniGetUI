@@ -126,9 +126,16 @@ function Test-Registered {
 }
 
 function Invoke-Unregister {
-    if (Test-Registered) {
-        Assert-Result (New-Object Windows.Management.Update.WindowsUpdateManager('UniGetUI')).GetProvider($Provider.Id).Unregister() 'Unregister'
-    }
+    if (-not (Test-Registered)) { return }
+    # Windows Update refuses while one of our updates is installing (UO_E_PROVIDER_UNREGISTRATION_FAILED),
+    # so wait for the deploy to finish
+    $deadline = (Get-Date).AddMinutes(10)
+    do {
+        $result = (New-Object Windows.Management.Update.WindowsUpdateManager('UniGetUI')).GetProvider($Provider.Id).Unregister()
+        $retry = -not $result.Succeeded -and $result.ResultCode -eq [uint32]2149884676 -and (Get-Date) -lt $deadline
+        if ($retry) { Start-Sleep -Seconds 5 }
+    } while ($retry)
+    Assert-Result $result 'Unregister'
 }
 
 function Invoke-Register {
